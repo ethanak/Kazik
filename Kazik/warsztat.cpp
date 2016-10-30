@@ -86,10 +86,10 @@ void Warsztat::newWorkshop(void)
     ypos = 0;
     dell(0,0);
     exit_x = random(5,16);
-    exit_y = random(5,16);
+    exit_y = random(5,ysize);
     dell(5,3);
     int8_t i;
-    ntools = N_TOOLS;
+    ntools = ysize; //N_TOOLS;
     for (i=0; i< ntools;) {
         int8_t x, y;
         x=random(16);
@@ -102,11 +102,11 @@ void Warsztat::newWorkshop(void)
         tool_types[i] = random(1,6);
         i++;
     }
-    nbags = N_TOOLS;
+    nbags = ysize; //N_TOOLS;
     for (i=0; i< ntools;) {
         int8_t x, y;
         x=random(16);
-        y=random(16);
+        y=random(ysize);
         if (abs(x-xpos) + abs(y-ypos) < 5) continue;
         if (!cell(x,y)) continue;
         dell(x,y);
@@ -115,11 +115,11 @@ void Warsztat::newWorkshop(void)
         bag_dir[i] = 0;
         i++;
     }
-    nspider = N_SPID;
+    nspider = ysize/2; //N_SPID;
     for (i=0; i < nspider;) {
         int8_t x, y;
         x=random(16);
-        y=random(16);
+        y=random(ysize);
         if (abs(x-xpos) + abs(y-ypos) < 5) continue;
         if (!cell(x,y)) continue;
         dell(x,y);
@@ -277,10 +277,10 @@ void Warsztat::drawWorkshop(void)
     if (xposd < 0) xposd = 0;
     else if (xposd > 128 - 84) xposd = 128 - 84;
     if (yposd < 0) yposd = 0;
-    else if (yposd > 128 - 40) yposd = 128 - 40;
+    else if (yposd > (ysize * 8) - 40) yposd = (ysize * 8) - 40;
     display.clearDisplay();
     for (x = 0; x < 16; x++) {
-        for (y = 0; y < 16;y++) {
+        for (y = 0; y < ysize;y++) {
             drawCell(x,y);
         }
     }
@@ -304,6 +304,10 @@ void Warsztat::drawWorkshop(void)
 void Warsztat::displayScore(void)
 {
     displayInt(48,0,5,score);
+    int8_t i;
+    for (i=0; i<lives; i++) {
+        display.drawBitmap(i*9,0,kazik_f, 8, 8, BLACK);
+    }
 }
 
 static PROGMEM const int8_t edx[]={0,1,-1,0,0};
@@ -314,7 +318,7 @@ static PROGMEM const int8_t sdy[]={0,0,1,0,-1};
 static PROGMEM const int8_t tup1_e[] = {1,1,64};
 static PROGMEM const int8_t tup2_e[] = {1,1,74};
 static PROGMEM const int8_t tool_e[] = {1, 5, 58, 65, 73, 87, 110};
-
+static PROGMEM const uint8_t spider_e[] = {1, 10, 100, 95,90,85,80,77,74,72,71,70};
 /*
  * Pająk zatrzymany - 0x08
  * Pająk może się ruszyć: jeśli zatrzymany, czeka na 0x48
@@ -347,7 +351,7 @@ void Warsztat::moveSpider(int8_t n)
     for (i = 1; i <= 4; i++) {
         int8_t x = spider_x[n] / 8 + pgm_read_byte(&sdx[i]);
         int8_t y = spider_y[n] / 8 + pgm_read_byte(&sdy[i]);
-        if (x < 0 || x > 15 || y < 0 || y > 15) continue;
+        if (x < 0 || x > 15 || y < 0 || y >= ysize) continue;
         if (cell(x,y)) continue;
         for (j=0; j< ntools; j++) {
             if (!tool_types[j]) continue;
@@ -396,8 +400,29 @@ void Warsztat::moveSpider(int8_t n)
 
 void Warsztat::warLoop(void)
 {
+    int8_t level;
+    lives = 3;
+    for (level = 0; level < 3; level++) {
+        int8_t rc = levelLoop(level);
+        if (rc < 0) return;
+        if (!rc) {
+            defeat(ngame);
+            return;
+        }
+    }
+    victory(ngame, score);
+}
+
+/*
+ * -1 - pauza
+ * 0 - przegrana
+ * 1 - przejście
+ */
+int8_t Warsztat::levelLoop(int8_t level)
+{
     int8_t i,*effect;
     bool eforce;
+    ysize = 8 + 4 * level;
     newWorkshop();
     dir = 0;
     for (;;) {
@@ -407,13 +432,13 @@ void Warsztat::warLoop(void)
     }
     for (;;) {
         i = getCommand();
-        if (i < 0) return;
+        if (i < 0) return -1;
         effect = NULL;
         eforce = false;
         if (xpos > 0 && (keyStatus & KSTAT_LEFT) && !(ypos & 7)) dir = 2;
         else if (xpos < 120 && (keyStatus & KSTAT_RIGHT) && !(ypos & 7)) dir = 1;
         else if (ypos > 0 && (keyStatus & KSTAT_FWD) && !(xpos & 7)) dir = 3;
-        else if (ypos < 120 && (keyStatus & KSTAT_BACK) && !(xpos & 7)) dir = 4;
+        else if (ypos < (ysize - 1) * 8 && (keyStatus & KSTAT_BACK) && !(xpos & 7)) dir = 4;
         else if (!(xpos & 7) && !(ypos & 7))dir = 0;
 
         // czy mogę tam pójść?
@@ -439,13 +464,21 @@ void Warsztat::warLoop(void)
         xpos += 2 * (int8_t)pgm_read_byte(&edx[dir]);
         ypos += 2 *(int8_t)pgm_read_byte(&edy[dir]);
         for (i=0; i<nspider;i++) {
+            if (dir && spider_d[i] >= 0 &&
+                (abs(xpos - spider_x[i]) + abs(ypos-spider_y[i])) <= 4) {
+                    spider_d[i] = -1;
+                    score -= 100;
+                    if (score < 0) score = 0;
+                    effect = spider_e;
+                    lives--;
+            }
             moveSpider(i);
         }
 
         if (dir) {
             int8_t vx, vy;
             int8_t pts = -1;
-            if (!((xpos | ypos) & 2)) effect = ((xpos | ypos) & 4)?tup1_e : tup2_e;
+            if (!effect && !((xpos | ypos) & 2)) effect = ((xpos | ypos) & 4)?tup1_e : tup2_e;
             if (dir == 1) {
                 vx = (xpos + 7) / 8;
                 vy = ypos / 8;
@@ -482,11 +515,13 @@ void Warsztat::warLoop(void)
         if (!xpos && dir == 2) dir = 0;
         if (xpos == 120 && dir == 1) dir = 0;
         if (ypos == 0 && dir == 3) dir = 0;
-        if (ypos == 120 && dir == 4) dir = 0;
+        if (ypos == (ysize - 1) * 8 && dir == 4) dir = 0;
 
 
         if (effect) playEffect(effect, eforce);
         drawWorkshop();
         delay(100);
+        if (lives < 0) return 0;
     }
+    return -1;
 }

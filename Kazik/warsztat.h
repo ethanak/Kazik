@@ -30,6 +30,7 @@ class Warsztat
         void moveSpider(int8_t);
         bool compXY(int8_t xin, int8_t yin, int8_t *xout, int8_t *yout);
         void displayScore(void);
+        int8_t levelLoop(int8_t);
 
 
         uint16_t tabela[16];
@@ -52,6 +53,8 @@ class Warsztat
         int8_t spider_d[N_SPID];
         int8_t nspider;
         int16_t score;
+        int8_t ysize;
+        int8_t lives;
 
         int8_t exit_x, exit_y;
 
