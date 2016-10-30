@@ -523,6 +523,14 @@ static PROGMEM const uint8_t effect_r[] = {1,3,120,110,100};
 static PROGMEM const uint8_t effect_g[] = {1,7,120,80,110,90,105,95,100};
 static PROGMEM const uint8_t effect_f[] = {2,1,60};
 
+// Åses død
+static PROGMEM const uint8_t aza[] = {
+    18, 14,
+    0x82, 16, 0x82, 21, 0x84, 23,
+    0x82, 16, 0x82, 21, 0x84, 23,
+    0x82, 24, 0x82, 23, 0x82, 21, 0x81, 23, 0x81, 24,
+    0x82, 26, 0x82, 24, 0x84, 23};
+
 void Maze::mazeLoop(void)
 {
     uint8_t mode, finito = 0;
@@ -530,7 +538,7 @@ void Maze::mazeLoop(void)
     mode = 0;
     for (;;) {
         breath = millis() - last_breath;
-        int8_t i=getCommand();
+        int32_t i=getCommand();
         if (i < 0) return;
         if (i > 0) {
             last_breath = millis() - breath;
@@ -617,6 +625,7 @@ void Maze::mazeLoop(void)
         victory(ngame, score);
     }
     else {
+        playMusic(aza);
         defeat(ngame);
     }
 }

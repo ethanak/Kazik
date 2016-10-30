@@ -26,6 +26,8 @@ Adafruit_PCD8544 display = Adafruit_PCD8544(5, 4, 3);
 int16_t keyStatus;
 int16_t lastXStick, lastYStick;
 
+#define LOW_POT 200
+#define HIGH_POT 400
 
 void getStick(void)
 {
@@ -39,36 +41,36 @@ void getStick(void)
     thisb = digitalRead(SELECT_PIN);
     keyStatus = 0;
 
-    if (lastXStick < 300) {
+    if (lastXStick < LOW_POT) {
         if (lxp == 1) keyStatus |= KST_LUP;
         if (lxp != -1) keyStatus |= KST_RDOWN;
         keyStatus |= KST_RIGHT;
         lxp = -1;
     }
-    else if (lastXStick > 350 && lastXStick < 700) {
+    else if (lastXStick > HIGH_POT && lastXStick < 1023 - HIGH_POT) {
         if (lxp == -1) keyStatus |= KST_RUP;
         if (lxp ==  1) keyStatus |= KST_LUP;
         lxp = 0;
     }
-    else if (lastXStick > 750) {
+    else if (lastXStick > 1023 - LOW_POT) {
         if (lxp == -1) keyStatus |= KST_RUP;
         if (lxp != 1) keyStatus |= KST_LDOWN;
         keyStatus |= KST_LEFT;
         lxp = 1;
     }
 
-    if (lastYStick < 300) {
+    if (lastYStick < LOW_POT) {
         if (lyp == 1) keyStatus |= KST_FUP;
         if (lyp != -1) keyStatus |= KST_BDOWN;
         keyStatus |= KST_BACK;
         lyp = -1;
     }
-    else if (lastYStick > 350 && lastYStick < 700) {
+    else if (lastYStick > HIGH_POT && lastYStick < 1023 - HIGH_POT) {
         if (lyp == -1) keyStatus |= KST_BUP;
         if (lyp ==  1) keyStatus |= KST_FUP;
         lyp = 0;
     }
-    else if (lastYStick > 750) {
+    else if (lastYStick > 1023 - LOW_POT) {
         if (lyp == -1) keyStatus |= KST_BUP;
         if (lyp != 1) keyStatus |= KST_FDOWN;
         keyStatus |= KST_FWD;
@@ -150,9 +152,9 @@ bool pauseGame(void)
         getStick();
     }
     for (i=0;!i;) {
-        if (keyStatus & KSTAT_LEFT) i = -1;
-        else if (keyStatus & KSTAT_RIGHT) i = 1;
-        else if (keyStatus & KSTAT_SELDOWN) switchLight();
+        if (keyStatus & KSTAT_LUP) i = -1;
+        else if (keyStatus & KSTAT_RUP) i = 1;
+        else if (keyStatus & KSTAT_SELUP) switchLight();
         else {
             delay(100);
             getStick();
@@ -162,8 +164,7 @@ bool pauseGame(void)
         delay(100);
         getStick();
     }
-
-    return i > 0;
+    return i < 0;
 }
 
 static const uint16_t PROGMEM notefreq [61] = {

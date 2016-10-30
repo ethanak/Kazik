@@ -73,9 +73,11 @@ void Kazik::kazikLoop(void)
         if (ladderNum < 9 && tatar >= pgm_read_byte(&tatarstep[ladderNum])) {
             ladderNum++;
         }
-        i=getCommand();
-        if (i < 0) return;
-        if (i > 0) continue;
+        {
+            int32_t ic=getCommand();
+            if (ic < 0) return;
+            if (ic > 0) continue;
+        }
         display.clearDisplay();
         if (keyStatus & KSTAT_LEFT) dir = -1;
         else if (keyStatus & KSTAT_RIGHT) dir = 1;
