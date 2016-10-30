@@ -227,7 +227,7 @@ void playMusic(const uint8_t *music, bool loop)
 
 void playEffect(const uint8_t *effect, bool force)
 {
-    if (!force && audio_mode == AUDIO_MUSIC) return;
+    if (!force && audio_mode) return;
     noInterrupts();
     audio_mode = AUDIO_EFFECT;
     effect_playing = 0;

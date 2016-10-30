@@ -55,9 +55,17 @@ static PROGMEM const uint8_t exit_f[]={
     0x00, 0x7e, 0x42, 0x42, 0x42, 0x42, 0x7e, 0x00
 };
 
+static PROGMEM const uint8_t bag_f [] = {
+0x3c, 0x42, 0x8d, 0x9d, 0xb9, 0xb1, 0x42, 0x3c,
+0x3c, 0x42, 0xb1, 0xb9, 0x9d, 0x8d, 0x42, 0x3c,
+0x3c, 0x42, 0x99, 0x99, 0x99, 0x99, 0x42, 0x3c,
+0x3c, 0x42, 0x81, 0xbd, 0xbd, 0x81, 0x42, 0x3c,
+};
+
 void Warsztat::init(int8_t ng)
 {
     ngame = ng;
+    score = 0;
 }
 
 uint8_t Warsztat::cell(int8_t x, int8_t y)
@@ -77,8 +85,8 @@ void Warsztat::newWorkshop(void)
     xpos = 0;
     ypos = 0;
     dell(0,0);
-    exit_x = 5;
-    exit_y = 3;
+    exit_x = random(5,16);
+    exit_y = random(5,16);
     dell(5,3);
     int8_t i;
     ntools = N_TOOLS;
@@ -94,18 +102,49 @@ void Warsztat::newWorkshop(void)
         tool_types[i] = random(1,6);
         i++;
     }
+    nbags = N_TOOLS;
+    for (i=0; i< ntools;) {
+        int8_t x, y;
+        x=random(16);
+        y=random(16);
+        if (abs(x-xpos) + abs(y-ypos) < 5) continue;
+        if (!cell(x,y)) continue;
+        dell(x,y);
+        bag_x[i] = x * 8;
+        bag_y[i] = y * 8;
+        bag_dir[i] = 0;
+        i++;
+    }
+    nspider = N_SPID;
+    for (i=0; i < nspider;) {
+        int8_t x, y;
+        x=random(16);
+        y=random(16);
+        if (abs(x-xpos) + abs(y-ypos) < 5) continue;
+        if (!cell(x,y)) continue;
+        dell(x,y);
+        spider_x[i] = x * 8;
+        spider_y[i] = y * 8;
+        spider_d[i] = 0;
+        i++;
+    }
+
+}
+
+
+bool Warsztat::compXY(int8_t xin, int8_t yin, int8_t *xout, int8_t *yout)
+{
+    *xout = xin - xposd;
+    *yout = yin - yposd;
+    return (*xout <= -8) || (*xout >= 84) || (*yout < -8) || (*yout >= 40);
 }
 
 
 void Warsztat::drawTool(int8_t n)
 {
     if (!tool_types[n]) return;
-    int8_t dx = tool_x[n] * 8 - xposd;
-    if (dx <= -8) return;
-    if (dx >= 84) return;
-    int8_t dy = tool_y[n] * 8 - yposd;
-    if (dy < -8) return;
-    if (dy >=40) return;
+    int8_t dx, dy;
+    if (compXY(tool_x[n] * 8, tool_y[n] * 8, &dx, &dy)) return;
     const uint8_t *c =  narzedzia_t + 8 * (tool_types[n] - 1);
     int8_t s = 8;
 
@@ -121,12 +160,8 @@ void Warsztat::drawTool(int8_t n)
 void Warsztat::drawExit(void)
 {
     static int8_t phase = 0;
-    int8_t dx = exit_x * 8 - xposd;
-    if (dx <= -8) return;
-    if (dx >= 84) return;
-    int8_t dy = exit_y * 8 - yposd;
-    if (dy < -8) return;
-    if (dy >=40) return;
+    int8_t dx, dy;
+    if (compXY(exit_x * 8, exit_y * 8, &dx, &dy)) return;
     const uint8_t *c =  exit_f + 8 * phase;
     phase = (phase + 1) % 3;
     int8_t s = 8;
@@ -144,12 +179,8 @@ void Warsztat::drawExit(void)
 void Warsztat::drawCell(int8_t x, int8_t y)
 {
     if (!cell(x,y)) return;
-    int8_t dx = x * 8 - xposd;
-    if (dx <= -8) return;
-    if (dx >= 84) return;
-    int8_t dy = y * 8 - yposd;
-    if (dy < -8) return;
-    if (dy >=40) return;
+    int8_t dx, dy;
+    if (compXY(x * 8, y * 8, &dx, &dy)) return;
     int8_t n = (17*x + 21*y) & 3;
     const uint8_t *c =  smieci_t + 8 * n;
     int8_t s = 8;
@@ -162,18 +193,25 @@ void Warsztat::drawCell(int8_t x, int8_t y)
     display.drawBitmap(dx,dy+8,c,8,s,BLACK);
 }
 
-void Warsztat::drawSpider(int8_t x,int8_t y,int8_t dir, int8_t phase)
+void Warsztat::drawSpider(int8_t n)
 {
-    int8_t dx = x - xposd;
-    if (dx <= -8) return;
-    if (dx >= 84) return;
-    int8_t dy = y - yposd;
-    if (dy < -8) return;
-    if (dy >=40) return;
+    int8_t dx, dy, dir, phase;
+    if (spider_d[n] == -1) return;
+    if (compXY(spider_x[n], spider_y[n], &dx, &dy)) return;
+    dir = spider_d[n] & 15;
+    if (dir & 8) dir = 0;
+    if (!dir) {
+        phase = ((spider_d[n] >> 4) + 1 ) & 3;
+        spider_d[n] = (spider_d[n] & 15) | (phase << 4);
+    }
+    else {
+        phase = (spider_x[n] | spider_y[n]) & 3;
+    }
     if (phase == 3) phase = 2;
     else if (phase == 2) phase = 0;
-    int8_t n = 3 * dir + phase;
-    const uint8_t *c =  spider_f + 8 * n;
+    dir = 0;
+    int8_t nr = 3 * dir + phase;
+    const uint8_t *c =  spider_f + 8 * nr;
     int8_t s = 8;
 
     if (dy < 0) {
@@ -181,8 +219,30 @@ void Warsztat::drawSpider(int8_t x,int8_t y,int8_t dir, int8_t phase)
         c += - dy;
         dy = 0;
     }
+
     display.drawBitmap(dx,dy+8,c,8,s,BLACK);
 }
+
+#define BAG_STABLE 0
+#define BAG_RIGHT 1
+#define BAG_LEFT 2
+#define BAG_DOWN 3
+#define BAG_WAIT 4
+
+void Warsztat::drawBag(int8_t n)
+{
+    int8_t dx, dy;
+    if (compXY(bag_x[n], bag_y[n], &dx, &dy)) return;
+    int8_t s = 8;
+    const uint8_t *c =  bag_f + 8 * ((n + bag_x[n]/2) & 3);
+    if (dy < 0) {
+        s += dy;
+        c += - dy;
+        dy = 0;
+    }
+    display.drawBitmap(dx,dy+8,c,8,s,BLACK);
+}
+
 
 void Warsztat::drawKazik(void)
 {
@@ -227,21 +287,117 @@ void Warsztat::drawWorkshop(void)
     for (i=0;i<ntools;i++) {
         drawTool(i);
     }
+    for (i=0; i<nbags;i++) {
+        drawBag(i);
+    }
+    for (i=0; i<nspider; i++) {
+        drawSpider(i);
+    }
     drawExit();
     drawKazik();
-    static int8_t p = 0, pu = 0;
-    drawSpider(16, 16, pu/20, p);
-    p = (p + 1) % 4;
-    pu = (pu + 1) % 80;
+    displayScore();
+
+
     display.display();
+}
+
+void Warsztat::displayScore(void)
+{
+    displayInt(48,0,5,score);
 }
 
 static PROGMEM const int8_t edx[]={0,1,-1,0,0};
 static PROGMEM const int8_t edy[]={0,0,0,-1,1};
+static PROGMEM const int8_t sdx[]={0,1,0,-1,0};
+static PROGMEM const int8_t sdy[]={0,0,1,0,-1};
+
+static PROGMEM const int8_t tup1_e[] = {1,1,64};
+static PROGMEM const int8_t tup2_e[] = {1,1,74};
+static PROGMEM const int8_t tool_e[] = {1, 5, 58, 65, 73, 87, 110};
+
+/*
+ * Pająk zatrzymany - 0x08
+ * Pająk może się ruszyć: jeśli zatrzymany, czeka na 0x48
+ *
+ * Pająk może się skierować w daną stronę, jeśli:
+ * - jest w obrębie warsztatu
+ * - nie ma śmieci
+ * - nie ma narzędzia
+ * - nie zbliży się do innego pająka o 8 lub mniej
+ * - nie zbiży się do worka na tym samym poziomie o 8 lub mniej
+ *
+ * Preferowany kierunek to ten, gdzie jest Kazik
+ * Pająk wyczuwa Kazika z odległości 48 lub w dowolnej po prostej
+ * bez przeszkód
+ */
+
+void Warsztat::moveSpider(int8_t n)
+{
+
+    if (spider_d[n] < 0) return;
+    int8_t asa[4],nt,i,j;
+    int8_t dir = spider_d[n] & 15;
+    if (dir & 8) dir = 0;
+    if ((spider_x[n] | spider_y[n]) & 7) {
+        spider_x[n] += 2 * pgm_read_byte(&sdx[dir]);
+        spider_y[n] += 2 * pgm_read_byte(&sdy[dir]);
+        return;
+    }
+    nt = 0;
+    for (i = 1; i <= 4; i++) {
+        int8_t x = spider_x[n] / 8 + pgm_read_byte(&sdx[i]);
+        int8_t y = spider_y[n] / 8 + pgm_read_byte(&sdy[i]);
+        if (x < 0 || x > 15 || y < 0 || y > 15) continue;
+        if (cell(x,y)) continue;
+        for (j=0; j< ntools; j++) {
+            if (!tool_types[j]) continue;
+            if (tool_x[j] == x && tool_y[j] == y) break;
+        }
+        if (j < ntools) continue;
+        x = spider_x[n] + 2 * pgm_read_byte(&sdx[i]);
+        y = spider_y[n] + 2 * pgm_read_byte(&sdy[i]);
+        for (j = 0; j < nspider;j ++) {
+            if (j == n || spider_d[j] < 0) continue;
+            if (abs(x - spider_x[j]) + abs(y - spider_y[j]) < 8) {
+                break;
+            }
+        }
+        if (j < nspider) continue;
+        for (j = 0; j < nbags; j++) {
+            if (abs(x - bag_x[j]) + abs(y - bag_y[j]) < 8) {
+                break;
+            }
+        }
+
+        if (j < nbags) continue;
+        asa[nt++]=i;
+    }
+    if (!nt) {
+        //Serial.print("Stopped ");
+        //Serial.println(n);
+        spider_d[n] = (spider_d[n] & 0xf0) | 0x08;
+        return;
+    }
+    if (spider_d[n] & 0x08) {
+        //Serial.print(n);Serial.print(" ");Serial.println(spider_d[n],HEX);
+        if ((spider_d[n] & 7) != 7) {
+            spider_d[n] = (spider_d[n] & 0xf8) |
+                ((spider_d[n] + 1) & 0x7);
+            Serial.print(n);Serial.print(" ");Serial.println(spider_d[n]);
+            return;
+        }
+    }
+
+    spider_d[n] = asa[random(nt)];
+    spider_x[n] += 2 * pgm_read_byte(&sdx[spider_d[n]]);
+    spider_y[n] += 2 * pgm_read_byte(&sdy[spider_d[n]]);
+    return;
+}
 
 void Warsztat::warLoop(void)
 {
-    int8_t i;
+    int8_t i,*effect;
+    bool eforce;
     newWorkshop();
     dir = 0;
     for (;;) {
@@ -252,26 +408,84 @@ void Warsztat::warLoop(void)
     for (;;) {
         i = getCommand();
         if (i < 0) return;
+        effect = NULL;
+        eforce = false;
         if (xpos > 0 && (keyStatus & KSTAT_LEFT) && !(ypos & 7)) dir = 2;
         else if (xpos < 120 && (keyStatus & KSTAT_RIGHT) && !(ypos & 7)) dir = 1;
         else if (ypos > 0 && (keyStatus & KSTAT_FWD) && !(xpos & 7)) dir = 3;
         else if (ypos < 120 && (keyStatus & KSTAT_BACK) && !(xpos & 7)) dir = 4;
         else if (!(xpos & 7) && !(ypos & 7))dir = 0;
+
+        // czy mogę tam pójść?
+        if (dir && !(xpos & 7) && !(ypos & 7)) {
+            int8_t nx = xpos + 8 * (int8_t)pgm_read_byte(&edx[dir]);
+            int8_t ny = ypos + 8 *(int8_t)pgm_read_byte(&edy[dir]);
+
+            for (i=0;i<nbags;i++) {
+                if (bag_dir[i] == 0 || (bag_dir[i] & BAG_WAIT)) { // nie rusza się
+                    if (bag_x[i] == nx && bag_y[i] == ny) {
+                        if (dir == 1 || dir == 2) {
+                            dir = 0;
+                        }
+                        else {
+                            dir = 0;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
         xpos += 2 * (int8_t)pgm_read_byte(&edx[dir]);
         ypos += 2 *(int8_t)pgm_read_byte(&edy[dir]);
+        for (i=0; i<nspider;i++) {
+            moveSpider(i);
+        }
+
+        if (dir) {
+            int8_t vx, vy;
+            int8_t pts = -1;
+            if (!((xpos | ypos) & 2)) effect = ((xpos | ypos) & 4)?tup1_e : tup2_e;
+            if (dir == 1) {
+                vx = (xpos + 7) / 8;
+                vy = ypos / 8;
+            }
+            else if (dir == 2) {
+                vx = xpos / 8;
+                vy = ypos / 8;
+            }
+            else if (dir == 3) {
+                vx =xpos / 8; vy = ypos / 8;
+            }
+            else {
+                vx = xpos / 8; vy = (ypos + 7) / 8;
+            }
+            if (cell(vx, vy)) {
+                dell(vx, vy);
+                pts = 10;
+            }
+            for (i=0; i< ntools; i++) {
+                if (tool_types[i] && tool_x[i] == vx && tool_y[i] == vy) {
+                    tool_types[i] = 0;
+                    effect = tool_e;
+                    eforce = true;
+                    pts = 50;
+                }
+            }
+            score += pts;
+            if (score < 0) score = 0;
+            else if (score > 30000) score = 30000;
+        }
+
+
+
         if (!xpos && dir == 2) dir = 0;
         if (xpos == 120 && dir == 1) dir = 0;
         if (ypos == 0 && dir == 3) dir = 0;
         if (ypos == 120 && dir == 4) dir = 0;
-        int8_t cx = xpos/8, cy = ypos/8;
-        if (cell(cx,cy)) {
-            dell(cx, cy);
-        }
-        for (i=0;i<ntools;i++) {
-            if (tool_types[i] && tool_x[i] == cx && tool_y[i] == cy) {
-                tool_types[i] = 0;
-            }
-        }
+
+
+        if (effect) playEffect(effect, eforce);
         drawWorkshop();
         delay(100);
     }

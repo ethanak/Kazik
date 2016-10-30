@@ -531,6 +531,12 @@ static PROGMEM const uint8_t aza[] = {
     0x82, 24, 0x82, 23, 0x82, 21, 0x81, 23, 0x81, 24,
     0x82, 26, 0x82, 24, 0x84, 23};
 
+static PROGMEM const uint8_t anitra[] = {
+    9, 18,
+    1, 22, 1, 21, 1, 22, 1, 24, 1, 25, 1, 27,
+    1, 29, 1, 34, 1, 29, 1, 27, 1, 25, 1, 24,
+    1, 22, 1, 24, 1, 25, 1, 27, 2, 29, 2, 34 };
+
 void Maze::mazeLoop(void)
 {
     uint8_t mode, finito = 0;
@@ -622,6 +628,7 @@ void Maze::mazeLoop(void)
         delay(50);
     }
     if (finito) {
+        playMusic(anitra);
         victory(ngame, score);
     }
     else {
