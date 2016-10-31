@@ -68,9 +68,9 @@ void Warsztat::init(int8_t ng)
     score = 0;
 }
 
-uint8_t Warsztat::cell(int8_t x, int8_t y)
+bool Warsztat::cell(int8_t x, int8_t y)
 {
-    return (tabela[y] & (1 << x)) ? 1 : 0;
+    return (tabela[y] & (1 << x)) != 0;
 
 }
 
@@ -87,9 +87,9 @@ void Warsztat::newWorkshop(void)
     dell(0,0);
     exit_x = random(5,16);
     exit_y = random(5,ysize);
-    dell(5,3);
+    dell(exit_x, exit_y);
     int8_t i;
-    ntools = ysize; //N_TOOLS;
+    ntools = 8 * (1 << level); //N_TOOLS;
     for (i=0; i< ntools;) {
         int8_t x, y;
         x=random(16);
@@ -102,8 +102,8 @@ void Warsztat::newWorkshop(void)
         tool_types[i] = random(1,6);
         i++;
     }
-    nbags = ysize; //N_TOOLS;
-    for (i=0; i< ntools;) {
+    nbags = 8 * (1 << level);
+    for (i = 0; i < nbags;) {
         int8_t x, y;
         x=random(16);
         y=random(ysize);
@@ -315,9 +315,9 @@ static PROGMEM const int8_t edy[]={0,0,0,-1,1};
 static PROGMEM const int8_t sdx[]={0,1,0,-1,0};
 static PROGMEM const int8_t sdy[]={0,0,1,0,-1};
 
-static PROGMEM const int8_t tup1_e[] = {1,1,64};
-static PROGMEM const int8_t tup2_e[] = {1,1,74};
-static PROGMEM const int8_t tool_e[] = {1, 5, 58, 65, 73, 87, 110};
+static PROGMEM const uint8_t tup1_e[] = {1,1,64};
+static PROGMEM const uint8_t tup2_e[] = {1,1,74};
+static PROGMEM const uint8_t tool_e[] = {1, 5, 58, 65, 73, 87, 110};
 static PROGMEM const uint8_t spider_e[] = {1, 10, 100, 95,90,85,80,77,74,72,71,70};
 /*
  * Pająk zatrzymany - 0x08
@@ -377,17 +377,13 @@ void Warsztat::moveSpider(int8_t n)
         asa[nt++]=i;
     }
     if (!nt) {
-        //Serial.print("Stopped ");
-        //Serial.println(n);
         spider_d[n] = (spider_d[n] & 0xf0) | 0x08;
         return;
     }
     if (spider_d[n] & 0x08) {
-        //Serial.print(n);Serial.print(" ");Serial.println(spider_d[n],HEX);
         if ((spider_d[n] & 7) != 7) {
             spider_d[n] = (spider_d[n] & 0xf8) |
                 ((spider_d[n] + 1) & 0x7);
-            Serial.print(n);Serial.print(" ");Serial.println(spider_d[n]);
             return;
         }
     }
@@ -400,7 +396,6 @@ void Warsztat::moveSpider(int8_t n)
 
 void Warsztat::warLoop(void)
 {
-    int8_t level;
     lives = 3;
     for (level = 0; level < 3; level++) {
         int8_t rc = levelLoop(level);
@@ -420,7 +415,8 @@ void Warsztat::warLoop(void)
  */
 int8_t Warsztat::levelLoop(int8_t level)
 {
-    int8_t i,*effect;
+    int8_t i;
+    const uint8_t *effect;
     bool eforce;
     ysize = 8 + 4 * level;
     newWorkshop();

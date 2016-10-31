@@ -20,7 +20,9 @@
 // pin 7 - audio
 
 
+#ifndef ARDUINO_AVR_PRO
 #define SERIAL_DEBUG 1
+#endif
 
 // swap left-right
 #define SWAP_LR 1

@@ -200,7 +200,7 @@ volatile bool effect_playing;
 volatile bool music_playing;
 volatile bool music_loop;
 volatile int8_t audio_mode;
-uint8_t *player_pos, *player_from;
+const uint8_t *player_pos, *player_from;
 
 int8_t note_len, tick_len;
 int8_t music_len;
@@ -355,7 +355,9 @@ static PROGMEM const uint8_t logo[] = {
 void setup(void)
 {
     int i;
+#ifdef SERIAL_DEBUG
     Serial.begin(9600);
+#endif
     display.begin();
     pinMode(SELECT_PIN, INPUT_PULLUP);
     pinMode(LIGHT_PIN, OUTPUT);
@@ -381,8 +383,8 @@ void setup(void)
             getStick();
             if (!(keyStatus & KSTAT_SELECT)) break;
         }
+        if (i >= 20) askEraseHS();
     }
-    if (i >= 20) askEraseHS();
     display.drawBitmap(2,10,logo,80,28,BLACK);
     display.display(); // show splashscreen
     for (i=0; i<500; i++) {
@@ -426,12 +428,11 @@ void displayText(int8_t x, int8_t y, int8_t len, const char *txt)
 
 int doMenu(void)
 {
-    int8_t i,y,j;const char *c;
+    int8_t i;
     static int8_t pos=0;
     display.clearDisplay();
     display.setTextColor(BLACK, WHITE);
     for (i=0; i<COUNT_GAMES; i++) {
-        y = MENUY + 8 * i;
         displayText(12, MENUY + 8 * i, 12, main_menu + 12 * i);
     }
     menuShowPos(pos);
@@ -478,7 +479,7 @@ void getHighScores(int ngame, struct highscore_res *r)
 /*
  * zwraca numer nowego rekordu lub -1
  */
-int8_t setHighScore(int ngame, uint16_t score,  struct highscore_res *r)
+int8_t setHighScore(int ngame, int16_t score,  struct highscore_res *r)
 {
     int addr = 11 * ngame;
     uint8_t magic;
@@ -592,7 +593,6 @@ Przegra\025e\007";
 
 void defeat(int8_t ng)
 {
-    int8_t i;
     display.clearDisplay();
     display.setTextColor(BLACK, WHITE);
     displayText(12, 16, 10, _lose);

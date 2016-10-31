@@ -17,7 +17,7 @@ class Warsztat
 
 
     private:
-        uint8_t cell(int8_t x, int8_t y);
+        bool cell(int8_t x, int8_t y);
         void dell(int8_t x, int8_t y);
         void drawWorkshop(void);
         void drawExit(void);
@@ -31,6 +31,7 @@ class Warsztat
         bool compXY(int8_t xin, int8_t yin, int8_t *xout, int8_t *yout);
         void displayScore(void);
         int8_t levelLoop(int8_t);
+
 
 
         uint16_t tabela[16];
@@ -55,6 +56,7 @@ class Warsztat
         int16_t score;
         int8_t ysize;
         int8_t lives;
+        uint8_t level;
 
         int8_t exit_x, exit_y;
 

@@ -13,7 +13,6 @@ class Maze {
         void mazeLoop(void);
 
     private:
-        void printme(void);
         void drawCell(int8_t n, bool left, bool front, bool right, uint8_t extra, int8_t door);
         void drawMap(void);
         void drawView(void);

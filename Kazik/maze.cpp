@@ -198,20 +198,6 @@ void Maze::mloop(void)
     }
 }
 
-void Maze::printme(void)
-{
-    int x, y;
-    const char *dirs[] = {"↑","→","↓","←"};
-    for (y=0; y<16; y++) {
-        for (x = 0; x < 16; x++) {
-            if (x == startx && y == starty) Serial.print(dirs[startd]);
-            else if (x == endx && y == endy) Serial.print(dirs[endd]);
-            else
-            Serial.print(cell(x,y)?'@':'.');
-        }
-        Serial.println();
-    }
-}
 
 void Maze::addStart(int8_t x, int8_t y, int8_t d)
 {
