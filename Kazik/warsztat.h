@@ -31,7 +31,9 @@ class Warsztat
         bool compXY(int8_t xin, int8_t yin, int8_t *xout, int8_t *yout);
         void displayScore(void);
         int8_t levelLoop(int8_t);
-
+        bool bagFieldFree(int8_t n, int8_t dir);
+        bool pushBag(int8_t n, int8_t lewo);
+        void moveBag(int8_t n);
 
 
         uint16_t tabela[16];

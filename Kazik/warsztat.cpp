@@ -319,6 +319,107 @@ static PROGMEM const uint8_t tup1_e[] = {1,1,64};
 static PROGMEM const uint8_t tup2_e[] = {1,1,74};
 static PROGMEM const uint8_t tool_e[] = {1, 5, 58, 65, 73, 87, 110};
 static PROGMEM const uint8_t spider_e[] = {1, 10, 100, 95,90,85,80,77,74,72,71,70};
+
+static PROGMEM const int8_t bdx[]={0,1,-1,0,1,-1};
+static PROGMEM const int8_t bdy[]={0,0,0,1,1,1};
+static PROGMEM const int8_t bsp[]={1,1,2,4};
+
+
+bool Warsztat::bagFieldFree(int8_t n, int8_t dir)
+{
+    int8_t i;
+    int8_t x,y;
+    x = bag_x[n] / 8 + pgm_read_byte(&bdx[dir]);
+    y = bag_y[n] / 8 + pgm_read_byte(&bdy[dir]);
+
+    if (x < 0 || x >= 16 || y < 0 || y >= ysize) return false;
+    if (cell(x,y)) return false;
+    if (x == exit_x && y == exit_y) return false;
+    for (i = 0; i < ntools; i++) {
+        if (tool_types[i] && tool_x[i] == x && tool_y[i] == y) {
+            return false;
+        }
+    }
+    /* jeszcze kolizja kamieni */
+    x <<= 3;
+    y <<= 3;
+    for (i = 0; i< nbags; i++) {
+        if (i == n) continue;
+        if (x == bag_x[i] && abs(y - bag_y[i]) < 8) return false;
+        if (y == bag_y[i] && abs(x - bag_x[i]) < 8) return false;
+    }
+    return true;
+}
+
+
+/*
+ * kamień się rusza jeśli jest popchnięty
+ * return: czy sie udało popchnąć
+ */
+
+bool Warsztat::pushBag(int8_t n, int8_t lewo)
+{
+    return false;
+}
+
+void Warsztat::moveBag(int8_t n)
+{
+    int8_t i,rc;
+    if (!(bag_dir[n] & 3)) {
+        rc = 0;
+        /* sprawdzenie: 1 i 4 - staczamy się w prawo, 2 i 5 - w lewo */
+        for (i = 1; i <= 3; i++) {
+            if (bagFieldFree(n, i)) {
+                if (i == 3 || bagFieldFree(n, i+3)) {
+                    rc |= 1<<i;
+                }
+            }
+        }
+        if (!rc) {
+            bag_dir[n] = 0;
+            return;
+        }
+        bag_dir[n] = ((bag_dir[n] + 0x10) & 0xf0) | 4;
+        if (bag_dir[n] <  0x70) return;
+        if (rc & 8) {
+            i = 3;
+        }
+        else {
+            if (rc == 6) {
+                i = random(1,2);
+            }
+            else if (rc & 2) i = 1;
+            else i = 2;
+        }
+        bag_dir[n] =0x10 | i;
+        bag_x[n] += (int8_t)pgm_read_byte(&bdx[i]);
+        bag_y[n] += (int8_t)pgm_read_byte(&bdy[i]);
+        return;
+
+    }
+    if (!((bag_x[n] | bag_y[n]) & 7)) { // środek pola
+        if ((bag_dir[n] & 3) == 3) { // czy spadamy?
+            if (!bagFieldFree(n, 3)) {
+                bag_dir[n]=0; // no to nie spadamy;
+            }
+        } else { // kierunek lewo - prawo
+            // czy możemy spaść?
+            if (bagFieldFree(n, 3)) {
+                bag_dir[n]=3; // no to spadamy
+            }
+            else if (!bagFieldFree(n, bag_dir[n] & 3)) {
+                bag_dir[n]=0;
+            }
+        }
+    }
+    if (!bag_dir[n]) return;
+    int dir = bag_dir[n] & 3;
+    i = pgm_read_byte(&bsp[(bag_dir[n] >> 4) & 3]);
+    bag_x[n] += i * pgm_read_byte(&bdx[dir]);
+    bag_y[n] += i * pgm_read_byte(&bdy[dir]);
+    if (i < 3) bag_dir[n] += 0x10;
+}
+
 /*
  * Pająk zatrzymany - 0x08
  * Pająk może się ruszyć: jeśli zatrzymany, czeka na 0x48
@@ -431,6 +532,7 @@ int8_t Warsztat::levelLoop(int8_t level)
         if (i < 0) return -1;
         effect = NULL;
         eforce = false;
+
         if (xpos > 0 && (keyStatus & KSTAT_LEFT) && !(ypos & 7)) dir = 2;
         else if (xpos < 120 && (keyStatus & KSTAT_RIGHT) && !(ypos & 7)) dir = 1;
         else if (ypos > 0 && (keyStatus & KSTAT_FWD) && !(xpos & 7)) dir = 3;
@@ -470,7 +572,9 @@ int8_t Warsztat::levelLoop(int8_t level)
             }
             moveSpider(i);
         }
-
+        for (i=0; i<nbags; i++) {
+            moveBag(i);
+        }
         if (dir) {
             int8_t vx, vy;
             int8_t pts = -1;
