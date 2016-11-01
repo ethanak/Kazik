@@ -27,15 +27,15 @@
 // swap left-right
 #define SWAP_LR 1
 // swap up/down
-#define SWAP_FB 1
+//#define SWAP_FB 1
 // swap horizontal/vertical
-//#define SWAP_HV 1
+#define SWAP_HV 1
 
 // rotate display
 #define ROTATE_DISPLAY 1
 
 // set display contrast
-#define DISPLAY_CONTRAST 60
+#define DISPLAY_CONTRAST 43
 
 //do not touch lines below!
 

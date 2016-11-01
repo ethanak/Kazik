@@ -171,14 +171,10 @@ bool pauseGame(void)
     for (i=0;!i;) {
         if (keyStatus & KSTAT_LUP) i = -1;
         else if (keyStatus & KSTAT_RUP) i = 1;
-        else if (keyStatus & KSTAT_SELUP) switchLight();
         else {
+            if (keyStatus & KSTAT_SELUP) switchLight();
             delay(100);
-            getStick();
         }
-    }
-    while (keyStatus) {
-        delay(100);
         getStick();
     }
     return i < 0;
