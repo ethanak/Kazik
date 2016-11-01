@@ -32,7 +32,7 @@ class Warsztat
         void displayScore(void);
         int8_t levelLoop(int8_t);
         bool bagFieldFree(int8_t n, int8_t dir);
-        bool pushBag(int8_t n, int8_t lewo);
+        bool pushBag(int8_t, int8_t);
         void moveBag(int8_t n);
 
 
@@ -59,6 +59,7 @@ class Warsztat
         int8_t ysize;
         int8_t lives;
         uint8_t level;
+        int8_t gtools;
 
         int8_t exit_x, exit_y;
 

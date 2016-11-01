@@ -152,6 +152,7 @@ void Kazik::kazikLoop(void)
         display.display();
         if (failed) break;
         dly = millis() - om;
+        if (dly < 0) dly = 0;
         if (dly < 100) delay(100 - dly);
 
     }

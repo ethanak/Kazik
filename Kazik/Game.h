@@ -74,21 +74,6 @@ extern int16_t lastXStick, lastYStick;
 #define KST_RIGHT KSTAT_RIGHT
 #endif
 
-#ifdef SWAP_FB
-#define KST_FDOWN KSTAT_BDOWN
-#define KST_FUP KSTAT_BUP
-#define KST_BDOWN KSTAT_FDOWN
-#define KST_BUP KSTAT_FUP
-#define KST_FWD KSTAT_BACK
-#define KST_BACK KSTAT_FWD
-#else
-#define KST_FDOWN KSTAT_FDOWN
-#define KST_FUP KSTAT_FUP
-#define KST_BDOWN KSTAT_BDOWN
-#define KST_BUP KSTAT_BUP
-#define KST_FWD KSTAT_FWD
-#define KST_BACK KSTAT_BACK
-#endif
 
 extern void getStick(void);
 /* getCommand zwraca:
@@ -101,10 +86,12 @@ extern Adafruit_PCD8544 display;
 
 #ifdef SERIAL_DEBUG
 extern void screenshot();
+extern int freeRam (void);
 #endif
 
 extern bool pauseGame(void);
 extern void displayInt(int8_t x, int8_t y, int8_t len, int16_t nr);
+extern void displayText(int8_t x, int8_t y, int8_t len, const char *txt);
 extern void victory(int8_t ng, int16_t score);
 extern void defeat(int8_t ng);
 extern void playEffect(const uint8_t *effect, bool force = true);

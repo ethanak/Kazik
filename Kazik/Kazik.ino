@@ -20,6 +20,22 @@
 #define LIGHT_PIN 6
 #define TONE_PIN 7
 
+#ifdef SWAP_FB
+#define KST_FDOWN KSTAT_BDOWN
+#define KST_FUP KSTAT_BUP
+#define KST_BDOWN KSTAT_FDOWN
+#define KST_BUP KSTAT_FUP
+#define KST_FWD KSTAT_BACK
+#define KST_BACK KSTAT_FWD
+#else
+#define KST_FDOWN KSTAT_FDOWN
+#define KST_FUP KSTAT_FUP
+#define KST_BDOWN KSTAT_BDOWN
+#define KST_BUP KSTAT_BUP
+#define KST_FWD KSTAT_FWD
+#define KST_BACK KSTAT_BACK
+#endif
+
 Adafruit_PCD8544 display = Adafruit_PCD8544(5, 4, 3);
 
 
@@ -96,19 +112,20 @@ int32_t getCommand(void)
     if (!(keyStatus & KSTAT_SELDOWN)) {
         return 0;
     }
-    uint32_t cajt = millis();
+    uint32_t cajt = millis(), cajt2;
+    bool t=false;
     for (;;) {
         getStick();
         if (keyStatus & KSTAT_SELUP) break;
+        cajt2 = millis() - cajt;
+        if (!t && cajt2 >= 1000) {
+            switchLight();
+            t=true;
+        }
         delay(10);
     }
-    uint32_t cajt2 = millis() - cajt;
-    if (cajt2 >= 1000) {
-        switchLight();
-        return (int32_t) cajt2;
-    }
-    if (pauseGame()) return -1;
-    return millis() - cajt;
+    if (!t && pauseGame()) return -1;
+    return cajt2;
 }
 
 #ifdef SERIAL_DEBUG
@@ -633,7 +650,7 @@ void loop(void)
 }
 
 #ifdef SERIAL_DEBUG
-int freeRam () {
+int freeRam (void) {
   extern int __heap_start, *__brkval;
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
