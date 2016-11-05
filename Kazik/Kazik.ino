@@ -1,3 +1,23 @@
+/*
+ * Kazik.ino - simple game platform for Arduino
+ * Copyright (C) Bohdan R. Rau 2016 <ethanak@polip.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301, USA.
+ *
+ */
 
 #include <SPI.h>
 #include <Adafruit_GFX.h>
@@ -20,21 +40,6 @@
 #define LIGHT_PIN 6
 #define TONE_PIN 7
 
-#ifdef SWAP_FB
-#define KST_FDOWN KSTAT_BDOWN
-#define KST_FUP KSTAT_BUP
-#define KST_BDOWN KSTAT_FDOWN
-#define KST_BUP KSTAT_FUP
-#define KST_FWD KSTAT_BACK
-#define KST_BACK KSTAT_FWD
-#else
-#define KST_FDOWN KSTAT_FDOWN
-#define KST_FUP KSTAT_FUP
-#define KST_BDOWN KSTAT_BDOWN
-#define KST_BUP KSTAT_BUP
-#define KST_FWD KSTAT_FWD
-#define KST_BACK KSTAT_BACK
-#endif
 
 Adafruit_PCD8544 display = Adafruit_PCD8544(5, 4, 3);
 
@@ -52,44 +57,53 @@ void getStick(void)
     static int8_t lastb=1;
     int8_t thisb;
 
-    lastXStick = analogRead(HORIZ_PIN);
-    lastYStick = analogRead(VERT_PIN);
+    lastXStick =
+#ifdef SWAP_LR
+        1023 -
+#endif
+        analogRead(HORIZ_PIN);
+    lastYStick =
+#ifdef SWAP_FB
+        1023 -
+#endif
+        analogRead(VERT_PIN);
+
     thisb = digitalRead(SELECT_PIN);
     keyStatus = 0;
 
     if (lastXStick < LOW_POT) {
-        if (lxp == 1) keyStatus |= KST_LUP;
-        if (lxp != -1) keyStatus |= KST_RDOWN;
-        keyStatus |= KST_RIGHT;
+        if (lxp == 1) keyStatus |= KSTAT_LUP;
+        if (lxp != -1) keyStatus |= KSTAT_RDOWN;
+        keyStatus |= KSTAT_RIGHT;
         lxp = -1;
     }
     else if (lastXStick > HIGH_POT && lastXStick < 1023 - HIGH_POT) {
-        if (lxp == -1) keyStatus |= KST_RUP;
-        if (lxp ==  1) keyStatus |= KST_LUP;
+        if (lxp == -1) keyStatus |= KSTAT_RUP;
+        if (lxp ==  1) keyStatus |= KSTAT_LUP;
         lxp = 0;
     }
     else if (lastXStick > 1023 - LOW_POT) {
-        if (lxp == -1) keyStatus |= KST_RUP;
-        if (lxp != 1) keyStatus |= KST_LDOWN;
-        keyStatus |= KST_LEFT;
+        if (lxp == -1) keyStatus |= KSTAT_RUP;
+        if (lxp != 1) keyStatus |= KSTAT_LDOWN;
+        keyStatus |= KSTAT_LEFT;
         lxp = 1;
     }
 
     if (lastYStick < LOW_POT) {
-        if (lyp == 1) keyStatus |= KST_FUP;
-        if (lyp != -1) keyStatus |= KST_BDOWN;
-        keyStatus |= KST_BACK;
+        if (lyp == 1) keyStatus |= KSTAT_FUP;
+        if (lyp != -1) keyStatus |= KSTAT_BDOWN;
+        keyStatus |= KSTAT_BACK;
         lyp = -1;
     }
     else if (lastYStick > HIGH_POT && lastYStick < 1023 - HIGH_POT) {
-        if (lyp == -1) keyStatus |= KST_BUP;
-        if (lyp ==  1) keyStatus |= KST_FUP;
+        if (lyp == -1) keyStatus |= KSTAT_BUP;
+        if (lyp ==  1) keyStatus |= KSTAT_FUP;
         lyp = 0;
     }
     else if (lastYStick > 1023 - LOW_POT) {
-        if (lyp == -1) keyStatus |= KST_BUP;
-        if (lyp != 1) keyStatus |= KST_FDOWN;
-        keyStatus |= KST_FWD;
+        if (lyp == -1) keyStatus |= KSTAT_BUP;
+        if (lyp != 1) keyStatus |= KSTAT_FDOWN;
+        keyStatus |= KSTAT_FWD;
         lyp = 1;
     }
     if (thisb != lastb && millis() - lastt > 200) {
@@ -125,7 +139,7 @@ int32_t getCommand(void)
         delay(10);
     }
     if (!t && pauseGame()) return -1;
-    return cajt2;
+    return millis()-cajt;
 }
 
 #ifdef SERIAL_DEBUG
@@ -360,8 +374,8 @@ static PROGMEM const uint8_t logo[] = {
 0x94, 0x08, 0x88, 0x4a, 0x0a, 0x58, 0xa4, 0xa2, 0x90, 0x94,
 0x94, 0x38, 0x89, 0xc8, 0x8b, 0xd0, 0xc4, 0xaa, 0x90, 0x94,
 0x94, 0x48, 0x8a, 0x48, 0x4a, 0x10, 0xa4, 0xb6, 0x96, 0x94,
-0xe3, 0x38, 0x89, 0xc8, 0x84, 0xd0, 0x93, 0x22, 0x66, 0xe3,
-0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
+0xe3, 0x38, 0x89, 0xcb, 0x84, 0xd0, 0x93, 0x22, 0x66, 0xe3,
+0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
 };
 
 
@@ -369,7 +383,13 @@ void setup(void)
 {
     int i;
 #ifdef SERIAL_DEBUG
-    Serial.begin(9600);
+    Serial.begin(
+#ifdef SERIAL_MOVIE
+    115200
+#else
+    9600
+#endif
+        );
 #endif
     display.begin();
     pinMode(SELECT_PIN, INPUT_PULLUP);
@@ -399,15 +419,13 @@ void setup(void)
         if (i >= 20) askEraseHS();
     }
     display.drawBitmap(2,10,logo,80,28,BLACK);
-    display.display(); // show splashscreen
+    display.display();
     for (i=0; i<500; i++) {
         getStick();
         if (keyStatus & (KSTAT_LDOWN | KSTAT_RDOWN | KSTAT_FDOWN | KSTAT_BDOWN)) break;
         delay(10);
     }
-    display.clearDisplay();   // clears the screen and buffer
-
-
+    display.clearDisplay();
     Timer1.initialize(20000);
     Timer1.attachInterrupt(musica);
 }
@@ -604,7 +622,7 @@ static PROGMEM const char _lose[]="\
 KONIEC GRY\
 Przegra\025e\007";
 
-void defeat(int8_t ng)
+void defeat(int8_t __attribute__((__unused__)) ng)
 {
     display.clearDisplay();
     display.setTextColor(BLACK, WHITE);

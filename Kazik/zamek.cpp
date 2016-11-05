@@ -1,3 +1,24 @@
+/*
+ * zamek.cpp - simple game platform for Arduino
+ * Copyright (C) Bohdan R. Rau 2016 <ethanak@polip.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301, USA.
+ *
+ */
+
 #include "Game.h"
 #include "zamek.h"
 
@@ -59,7 +80,6 @@ static const PROGMEM uint8_t tatarstep[] = {
 };
 void Kazik::kazikLoop(void)
 {
-    int8_t x = 0;
     int8_t i;
     uint32_t om;
     int16_t dly;
@@ -145,6 +165,9 @@ void Kazik::kazikLoop(void)
                 displayInt(52,0,5,steps);
             }
         }
+#ifdef SERIAL_MOVIE
+        screenshot();
+#endif
         display.display();
         if (failed) break;
         dly = millis() - om;
@@ -200,9 +223,6 @@ static const PROGMEM uint8_t stone_f[] = {
 void Kazik::drawKazik(int8_t x, int8_t dir, bool stone)
 {
     uint8_t offset;
-
-    //display.drawBitmap(10, 0, kazik_f + 33, 8, 11, BLACK);
-    //return;
 
     if (!dir) {
         offset = stone ? 11 : 0;

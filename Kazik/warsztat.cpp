@@ -1,3 +1,24 @@
+/*
+ * warsztat.cpp - simple game platform for Arduino
+ * Copyright (C) Bohdan R. Rau 2016 <ethanak@polip.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301, USA.
+ *
+ */
+
 #include "Game.h"
 #include "warsztat.h"
 
@@ -81,7 +102,6 @@ void Warsztat::dell(int8_t x, int8_t y)
 
 void Warsztat::newWorkshop(void)
 {
-    //Serial.println("Init start");
     memset(tabela,0xff,32);
     xpos = 0;
     ypos = 0;
@@ -91,7 +111,7 @@ void Warsztat::newWorkshop(void)
     dell(exit_x, exit_y);
     gtools = 0;
     int8_t i;
-    ntools = 8 * (1 << level); //N_TOOLS;
+    ntools = 8 * (1 << level);
     for (i=0; i< ntools;) {
         int8_t x, y;
         x=random(16);
@@ -117,7 +137,7 @@ void Warsztat::newWorkshop(void)
         bag_dir[i] = 0;
         i++;
     }
-    nspider = ysize/2; //N_SPID;
+    nspider = ysize/2;
     for (i=0; i < nspider;) {
         int8_t x, y;
         x=random(16);
@@ -131,7 +151,6 @@ void Warsztat::newWorkshop(void)
         spider_d[i] = 0;
         i++;
     }
-    //Serial.println("Init OK");
 
 }
 
@@ -303,6 +322,9 @@ void Warsztat::drawWorkshop(void)
 
 
     display.display();
+#ifdef SERIAL_MOVIE
+        screenshot();
+#endif
 }
 
 void Warsztat::displayScore(void)
@@ -385,10 +407,7 @@ bool Warsztat::pushBag(int8_t n, int8_t dir)
 
     int16_t x = xpos + 8 * dir;
     int8_t  i;;
-    //Serial.print(freeRam());
-    //Serial.println(" Pchamy");
     if (x < 8 || x >= 120) return false;
-    //Serial.println(n);
     for (;;) {
         x += 8 * dir;
         if (x >= 8 && x < 120) {
@@ -402,7 +421,6 @@ bool Warsztat::pushBag(int8_t n, int8_t dir)
         }
         break;
     }
-    //Serial.println(n);
     if (bagFieldFree(n, (dir == 1)? 1 : 2)) {
         bag_dir[n] = (dir == 1)? 1 : 2;
         return true;
@@ -695,8 +713,6 @@ int8_t Warsztat::levelLoop(int8_t level)
                     eforce = true;
                     pts = 50;
                     gtools ++;
-                    //Serial.print("Gtools ");
-                    //Serial.println(gtools);
                 }
             }
             score += pts;

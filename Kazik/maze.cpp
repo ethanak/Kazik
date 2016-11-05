@@ -1,3 +1,24 @@
+/*
+ * maze.cpp - simple game platform for Arduino
+ * Copyright (C) Bohdan R. Rau 2016 <ethanak@polip.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301, USA.
+ *
+ */
+
 #include "Game.h"
 #include "maze.h"
 
@@ -131,7 +152,7 @@ int8_t Maze::cmoves(int8_t x, int8_t y, uint8_t *rc)
 void Maze::move(void)
 {
     uint8_t rc[4], x, y;
-    int n, nrc;
+    int nrc;
 
     while (nprs) {
         int n = random(nprs - 1);

@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+#coding: utf-8;
+
+from PIL import Image
+import cStringIO, sys
+
+
+ss="""
+==SCREENSHOT==
+004000020A22000000081000100A02000000024200001C000010120040022000
+004000020A22000000081000100A02000000024200001C000010120040022000
+004000020A22000000081000100A02000000024200081000100A020000000242
+00001C000010120040022000004000020A22000003068CD87070781000000242
+00001C000010120040022000000000000000000000081000100A020000000242
+00001C005252347C0000024200001C000010120040022000004000020A220000
+00081000100A0200003927FCFCFC273900000000000000000000000000000000
+00000000000000000000024200001C0000101200400220000040000200101200
+40022000004000020A22000000081000100A02000000024200001C0000101200
+40022000004000020A22000000081000100A0200000000000000000000000000
+00000000000000000000000000000000004000020A22000000081000100A0200
+0000024200001C000010120040022000004000020A22000000081000100A0200
+0000024200001C000000000000000000004000020A2200000102041878F0F0E0
+0000000000000000000000629292924E00E090888482000002FE420000000000
+000000000000000000000000000000000000000000000000003927FCFCFC2739
+00003927FCFCFC273900003927FCFCFC2739000002FE4200
+==END==
+"""
+
+LCDWIDTH = 84
+LCDHEIGHT = 48
+
+buffer = []
+
+def getPixel(x, y):
+    global buffer, LCDWIDTH, LCDHEIGHT
+    return (buffer[x+ (y/8)*LCDWIDTH] >> (y%8)) & 0x1
+
+def feed(line):
+    global buffer
+    line = line.strip()
+    while len(line) > 1:
+        a = line[:2]
+        line = line[2:]
+        buffer.append(int(a,16))
+
+try:
+    outname = sys.argv[1]
+except:
+    outname = 'screenshot.png'
+
+for a in ss.split():
+    if 'SCREENSHOT' in a:
+        buffer = []
+        continue
+    if not a.startswith('='):
+        feed(a)
+        continue
+    if not buffer:
+        continue
+    if len(buffer) < 504:
+        print len(buffer)
+        continue
+    im = Image.new('L',(2*84 + 10, 2 * 48 + 10), 255)
+
+    for y in range(48):
+        for x in range(84):
+            im.putpixel((2*84 + 10 -(2*x+5),2 * 48 + 10 - (2*y+5)),255 if not getPixel(x,y) else 0)
+            im.putpixel((2*84 + 10 -(2*x+5),2 * 48 + 10 - (2*y+6)),255 if not getPixel(x,y) else 0)
+            im.putpixel((2*84 + 10 -(2*x+6),2 * 48 + 10 - (2*y+6)),255 if not getPixel(x,y) else 0)
+            im.putpixel((2*84 + 10 -(2*x+6),2 * 48 + 10 - (2*y+5)),255 if not getPixel(x,y) else 0)
+    buffer = None
+    im.save(outname)
+    break
+
+im.show()
+
+

@@ -1,3 +1,24 @@
+/*
+ * Game.h - simple game platform for Arduino
+ * Copyright (C) Bohdan R. Rau 2016 <ethanak@polip.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301, USA.
+ *
+ */
+
 #ifndef ETH_GAME_H
 #define ETH_GAME_H 1
 
@@ -24,20 +45,27 @@
 #define SERIAL_DEBUG 1
 #endif
 
-// swap left-right
-#define SWAP_LR 1
-// swap up/down
-//#define SWAP_FB 1
-// swap horizontal/vertical
-#define SWAP_HV 1
+//#define RECORD_MOVIE 1
 
-// rotate display
+// zamień lewy-prawy
+#define SWAP_LR 1
+// zamień dół-góra
+#define SWAP_FB 1
+// zamień pion/poziom
+//#define SWAP_HV 1
+
+// odwrócony ekran
 #define ROTATE_DISPLAY 1
 
-// set display contrast
-#define DISPLAY_CONTRAST 43
+// ustaw kontrast
+//#define DISPLAY_CONTRAST 45
+#define DISPLAY_CONTRAST 60
 
-//do not touch lines below!
+//niżej nie pchaj palców chyba że wiesz co robisz
+
+#if defined(RECORD_MOVIE) && defined(SERIAL_DEBUG)
+#define SERIAL_MOVIE 1
+#endif
 
 extern int16_t keyStatus;
 extern int16_t lastXStick, lastYStick;
@@ -57,22 +85,6 @@ extern int16_t lastXStick, lastYStick;
 #define KSTAT_SELDOWN 0x1000
 #define KSTAT_SELUP 0x2000
 #define KSTAT_SELECT 0x4000
-
-#ifdef SWAP_LR
-#define KST_LDOWN KSTAT_RDOWN
-#define KST_LUP KSTAT_RUP
-#define KST_RDOWN KSTAT_LDOWN
-#define KST_RUP KSTAT_LUP
-#define KST_LEFT KSTAT_RIGHT
-#define KST_RIGHT KSTAT_LEFT
-#else
-#define KST_LDOWN KSTAT_LDOWN
-#define KST_LUP KSTAT_LUP
-#define KST_RDOWN KSTAT_RDOWN
-#define KST_RUP KSTAT_RUP
-#define KST_LEFT KSTAT_LEFT
-#define KST_RIGHT KSTAT_RIGHT
-#endif
 
 
 extern void getStick(void);
